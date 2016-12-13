@@ -1,0 +1,10 @@
+[package]
+name = "boknafisk"
+version = "0.1.0"
+authors = ["Declan Kelly <dkelly.home@gmail.com>"]
+
+[[bin]]
+name = "boknafisk"
+path = "src/main.rs"
+
+[dependencies]
