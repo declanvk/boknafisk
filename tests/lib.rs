@@ -13,4 +13,3 @@ fn it_works() {
 fn it_panics() {
     panic!("Expected panic")
 }
-
