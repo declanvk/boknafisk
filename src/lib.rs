@@ -15,3 +15,4 @@ pub mod misc;
 pub mod piece;
 pub mod square_position;
 pub mod error_types;
+pub mod rkiss;
