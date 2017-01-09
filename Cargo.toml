@@ -3,9 +3,8 @@ name = "boknafisk"
 version = "0.1.0"
 authors = ["Declan Kelly <dkelly.home@gmail.com>"]
 
-[[bin]]
+[lib]
 name = "boknafisk"
-path = "src/bin/main.rs"
 
 [dependencies]
 bitflags = "0.7"

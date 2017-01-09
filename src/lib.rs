@@ -14,3 +14,4 @@ pub mod chess_move;
 pub mod misc;
 pub mod piece;
 pub mod square_position;
+pub mod error_types;

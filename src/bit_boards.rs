@@ -1,6 +1,7 @@
 use square_position::{SquarePosition, Direction, NORTH, SOUTH, EAST, WEST, INTERMEDIATE, CARDINAL};
 use unicode_segmentation::UnicodeSegmentation;
-use std::convert::TryFrom;
+use std::convert::{TryFrom, From};
+use piece_board::{PieceBoard};
 
 pub type BitBoard = u64;
 
@@ -78,21 +79,21 @@ fn generate_mask(directions: &[Direction], edges: bool) -> [BitBoard; 64] {
 }
 
 fn generate_attacks(directions: &[Direction]) -> [BitBoard; 64] {
-        let mut attacks = [0 as BitBoard; 64];
+    let mut attacks = [0 as BitBoard; 64];
 
-        for square_index in 0..64 {
-            let position = SquarePosition::try_from(square_index);
-            if let Ok(pos) = position {
-                for direction in directions {
-                    if let Some(new_pos) = pos + *direction {
-                        attacks[square_index as usize] |= 1 << new_pos.to_square_index();
-                    }
+    for square_index in 0..64 {
+        let position = SquarePosition::try_from(square_index);
+        if let Ok(pos) = position {
+            for direction in directions {
+                if let Some(new_pos) = pos + *direction {
+                    attacks[square_index as usize] |= 1 << new_pos.to_square_index();
                 }
             }
         }
-
-        attacks
     }
+
+    attacks
+}
 
 const INDEX_64: [usize; 64] = [
     0, 47,  1, 56, 48, 27,  2, 60,
@@ -198,5 +199,25 @@ pub fn subsets_iterator(set: &BitBoard) -> BitSubsetIter {
     BitSubsetIter {
         board: set,
         subset: ((0 as BitBoard).wrapping_sub(*set)) & *set
+    }
+}
+
+impl From<SquarePosition> for BitBoard {
+    fn from(position: SquarePosition) -> BitBoard {
+        1 << position.to_square_index()
+    }
+}
+
+impl From<PieceBoard> for ([[BitBoard; 6]; 2], [BitBoard; 2]) {
+    fn from(piece_board: PieceBoard) -> ([[BitBoard; 6]; 2], [BitBoard; 2]) {
+        let mut bit_board = [[0 as BitBoard; 6]; 2];
+        let mut bit_occupancy = [0 as BitBoard; 2];
+
+        for (position, piece) in piece_board.into_iter() {
+            bit_board[piece.color() as usize][piece.piece_type() as usize] |= 1 << position.to_square_index();
+            bit_occupancy[piece.color() as usize] |= 1 << position.to_square_index();
+        }
+
+        (bit_board, bit_occupancy)
     }
 }

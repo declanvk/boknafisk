@@ -2,8 +2,9 @@ use std::ops::{Mul, Add};
 use std::fmt;
 use std::str::FromStr;
 use std::convert::TryFrom;
+use error_types::FromStrError;
 
-#[derive(Debug, Copy, Hash, Clone)]
+#[derive(Debug, Copy, Hash, Clone, PartialEq)]
 pub struct SquarePosition {
     pub rank: usize,
     pub file: usize,
@@ -61,35 +62,28 @@ impl TryFrom<usize> for SquarePosition {
     }
 } 
 
-#[derive(Debug)]
-pub enum SquarePositionParseError {
-    WrongInputLength,
-    InvalidFileChar,
-    InvalidRankChar,
-}
-
 impl FromStr for SquarePosition {
-    type Err = SquarePositionParseError;
+    type Err = FromStrError;
 
-    fn from_str(s: &str) -> Result<SquarePosition, SquarePositionParseError> {
+    fn from_str(s: &str) -> Result<SquarePosition, Self::Err> {
         let tokens = s.chars().collect::<Vec<char>>();
         if tokens.len() != 2 {
-            return Err(SquarePositionParseError::WrongInputLength);
+            Err(FromStrError::InvalidInputLength("square position", 2, tokens.len()))
         } else {
             let file_char = tokens[0];
             let rank_char = tokens[1];
 
             let file = ((file_char as u8) - ('a' as u8)) as usize;
             if file < (0 as usize) || (7 as usize) < file {
-                return Err(SquarePositionParseError::InvalidFileChar);
+                return Err(FromStrError::MalformedInput("square position"));
             }
 
             let rank = ((rank_char as u8) - ('1' as u8)) as usize;
             if rank < (0 as usize) || (7 as usize) < rank {
-                return Err(SquarePositionParseError::InvalidRankChar);
+                return Err(FromStrError::MalformedInput("square position"));
             }
 
-            Ok(SquarePosition::new(file, rank))
+            Ok(SquarePosition::new(rank, file))
         }
     }
 }
@@ -177,5 +171,64 @@ impl Mul<i32> for Direction {
 
     fn mul(self, other: i32) -> Direction {
         Direction(self.0 * other, self.1 * other)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use square_position::SquarePosition;
+    use std::convert::TryFrom;
+
+    fn all_squares_str() -> Vec<&'static str> {
+        vec![
+            "a1","b1","c1","d1","e1","f1","g1","h1",
+            "a2","b2","c2","d2","e2","f2","g2","h2",
+            "a3","b3","c3","d3","e3","f3","g3","h3",
+            "a4","b4","c4","d4","e4","f4","g4","h4",
+            "a5","b5","c5","d5","e5","f5","g5","h5",
+            "a6","b6","c6","d6","e6","f6","g6","h6",
+            "a7","b7","c7","d7","e7","f7","g7","h7",
+            "a8","b8","c8","d8","e8","f8","g8","h8"
+        ]
+    }
+
+    fn all_squares_indices() -> Vec<usize> {
+        vec![
+             0, 1, 2, 3, 4, 5, 6, 7,
+             8, 9,10,11,12,13,14,15,
+            16,17,18,19,20,21,22,23,
+            24,25,26,27,28,29,30,31,
+            32,33,34,35,36,37,38,39,
+            40,41,42,43,44,45,46,47,
+            48,49,50,51,52,53,54,55,
+            56,57,58,59,60,61,62,63 
+        ]
+    }
+
+    fn all_squares_positions() -> Vec<SquarePosition> {
+        let mut positions = vec![];
+        for rank in 0..8 {
+            for file in 0..8 {
+                positions.push(SquarePosition::new(rank, file));
+            }
+        }
+
+        positions
+    }
+
+    #[test]
+    fn positions_indices_equivalence_test() {
+        for (&position, &index) in all_squares_positions().iter().zip(all_squares_indices().iter()) {
+            assert_eq!(position.to_square_index(), index);
+            assert_eq!(position, SquarePosition::try_from(index).unwrap());
+        }
+    }
+
+    #[test]
+    fn positions_str_equivalence_test() {
+        for (&position, &position_str) in all_squares_positions().iter().zip(all_squares_str().iter()) {
+            assert_eq!(position.to_string(), position_str);
+            assert_eq!(position, position_str.parse::<SquarePosition>().unwrap());
+        }
     }
 }

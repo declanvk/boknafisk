@@ -1,12 +1,14 @@
 use piece_board::PieceBoard;
-use castling::{CastlingFlags, WHITE_QUEENSIDE, WHITE_KINGSIDE, BLACK_QUEENSIDE, BLACK_KINGSIDE};
+use castling::CastlingFlags;
 use piece::{PieceType, Color};
-use square_position::{SquarePosition,Direction, EAST};
+use square_position::SquarePosition;
 use std::ops::Index;
 use bit_boards::*;
 use std::convert::{TryFrom};
 use std::fmt;
 use std::result::Result;
+use std::str::FromStr;
+use error_types::FromFenError;
 
 pub struct BoardState {
     bit_board: [[BitBoard; 6]; 2],
@@ -19,137 +21,57 @@ pub struct BoardState {
     active_color: Color
 }
 
-#[derive(Debug)]
-pub enum FromFenError {
-    FakeError
-}
-
-impl<'a> TryFrom<&'a str> for BoardState {
+impl FromStr for BoardState {
     type Err = FromFenError;
 
-    fn try_from(fen_string: &'a str) -> Result<BoardState, FromFenError> {
-        Err(FromFenError::FakeError)
+    fn from_str(fen_string: &str) -> Result<BoardState, FromFenError> {
+        let components = fen_string.split_whitespace().collect::<Vec<&str>>();
+        if components.len() == 6 {
+            let piece_board: PieceBoard = components[0].parse()?;
+
+            let (bit_board, bit_occupancy): ([[BitBoard; 6]; 2], [BitBoard; 2]) = From::from(piece_board);
+
+            let active_color: Color = components[1].parse()?;
+
+            let castling_rights: CastlingFlags = components[2].parse()?;
+
+            let en_passant_position: BitBoard = match components[3].parse::<SquarePosition>() {
+                Ok(position) => BitBoard::from(position),
+                Err(_) => 0,
+            };
+
+            let halfmove_clock: u32 = components[4].parse()?;
+
+            let fullmove_clock: u32 = components[5].parse()?;
+
+            Ok(BoardState {
+                bit_board: bit_board,
+                bit_occupancy: bit_occupancy,
+                en_passant: en_passant_position,
+                piece_board: piece_board,
+                castling_rights: castling_rights,
+                halfmove_clock: halfmove_clock,
+                fullmove_clock: fullmove_clock,
+                active_color: active_color
+            })
+        } else {
+            Err(FromFenError::IncorrectNumberOfFields(components.len()))
+        }
     }
 }
 
 impl fmt::Display for BoardState {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut result: String = String::new();
-
-        //Piece placement
-        for rank_index in (0..8).rev() {
-            let mut position_index = SquarePosition {rank: rank_index, file: 0};
-
-            let mut empty_count = 0;
-            match self.piece_board[position_index] {
-                Some(piece) => {
-                    if empty_count > 0 {
-                        result += &empty_count.to_string();
-                    }
-
-                    result += match piece.piece_type() {
-                        PieceType::King => "K",
-                        PieceType::Queen => "Q",
-                        PieceType::Bishop => "B",
-                        PieceType::Knight => "K",
-                        PieceType::Rook => "R",
-                        PieceType::Pawn => "P",
-                    };
-
-                    empty_count = 0;
-                },
-                None => empty_count += 1,
-            }
-
-            while let Some(new_position) = position_index + EAST {
-                match self.piece_board[new_position] {
-                    Some(piece) => {
-                        if empty_count > 0 {
-                            result += &empty_count.to_string();
-                        }
-
-                        result += match piece.piece_type() {
-                            PieceType::King => "K",
-                            PieceType::Queen => "Q",
-                            PieceType::Bishop => "B",
-                            PieceType::Knight => "K",
-                            PieceType::Rook => "R",
-                            PieceType::Pawn => "P",
-                        };
-
-                        empty_count = 0;
-                    },
-                    None => empty_count += 1,
-                }
-
-                position_index = new_position;
-            }
-
-            if empty_count > 0 {
-                result += &empty_count.to_string();
-            }
-
-            if rank_index > 0 {
-                result += "/"
-            }
-        }
-
-        result += " ";
-
-        //Active color
-        match self.active_color {
-            Color::White => {
-                result += "w";
-            },
-            Color::Black => {
-                result += "b";
-            }
-        }
-
-        result += " ";
-
-        //Castling availability
-        if self.castling_rights.is_empty() {
-            result += "-";
-        } else {
-            if self.castling_rights.intersects(WHITE_KINGSIDE) {
-                result += "K";
-            }
-
-            if self.castling_rights.intersects(WHITE_QUEENSIDE) {
-                result += "Q";
-            }
-
-            if self.castling_rights.intersects(BLACK_KINGSIDE) {
-                result += "k";
-            }
-
-            if self.castling_rights.intersects(BLACK_QUEENSIDE) {
-                result += "q";
-            }
-        }
-
-        result += " ";
-
-        //En passant position
         let en_passant_position =
             bit_scan_forward(self.en_passant)
-                .map(|square_index| SquarePosition::try_from(square_index));
-        if let Some(Ok(new_pos)) = en_passant_position {
-            result += &new_pos.to_string();
-        } else {
-            result += "-"
-        }
+                .map_or("-".to_owned(), |square_index| SquarePosition::try_from(square_index).unwrap().to_string());
 
-        result += " ";
-
-        result += &self.halfmove_clock.to_string();
-
-        result += " ";
-
-        result += &self.fullmove_clock.to_string();
-
-        write!(f, "{}", result)
+        write!(f, "{} {} {} {} {} {}",  self.piece_board,
+                                        self.active_color,
+                                        self.castling_rights,
+                                        en_passant_position,
+                                        self.halfmove_clock,
+                                        self.fullmove_clock)
     }
 }
 
@@ -166,5 +88,41 @@ impl Index<Color> for BoardState {
 
     fn index(&self, index: Color) -> &Self::Output {
         &self.bit_occupancy[index as usize]
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use bit_boards::BitBoard;
+    use board_state::BoardState;
+    use piece_board::PieceBoard;
+    use std::convert::From;
+    use castling::CastlingFlags;
+    use piece::Color;
+
+    fn starting_board_state() -> BoardState {
+        let starting_piece_board = PieceBoard::starting_board();
+        let (bit_board, bit_occupancy) = From::from(starting_piece_board);
+
+        BoardState {
+            bit_board: bit_board,
+            bit_occupancy: bit_occupancy,
+            piece_board: starting_piece_board,
+            en_passant: 0 as BitBoard,
+            castling_rights: CastlingFlags::all(),
+            halfmove_clock: 0,
+            fullmove_clock: 1,
+            active_color: Color::White
+        }
+    }
+
+    #[test]
+    fn starting_to_string_test() {
+        assert_eq!("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", starting_board_state().to_string());
+    }
+
+    #[test]
+    fn starting_from_string_test() {
+        assert_eq!(starting_board_state().to_string(), "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".parse::<BoardState>().unwrap().to_string());
     }
 }
