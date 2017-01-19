@@ -38,7 +38,7 @@ lazy_static! {
 }
 
 pub trait BitboardGenerator {
-    fn get_attacks(&Self, position: SquarePosition, occupancy: BitBoard) -> BitBoard;
+    fn get_attacks(&self, position: SquarePosition, occupancy: BitBoard) -> BitBoard;
 }
 
 pub struct StepAttackBoard {
@@ -49,14 +49,14 @@ pub struct StepAttackBoard {
 impl StepAttackBoard {
     pub fn new(piece_type: PieceType) -> StepAttackBoard {
         let directions: &[Direction] = &match piece_type {
-            PieceType::KING => *KING_DIRECTIONS,
-            PieceType::KNIGHT => *KNIGHT_DIRECTIONS,
+            PieceType::King => *KING_DIRECTIONS,
+            PieceType::Knight => *KNIGHT_DIRECTIONS,
             _ => panic!("Illegal piece type argument"),
         };
 
         let attack_array: Box<[BitBoard]> = match piece_type {
-            PieceType::KING => box [0 as BitBoard; KING_ATTACKS_SIZE],
-            PieceType::KNIGHT => box [0 as BitBoard; KNIGHT_ATTACKS_SIZE],
+            PieceType::King => box [0 as BitBoard; KING_ATTACKS_SIZE],
+            PieceType::Knight => box [0 as BitBoard; KNIGHT_ATTACKS_SIZE],
             _ => panic!("Illegal piece type argument"),
         };
 
