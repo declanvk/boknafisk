@@ -6,14 +6,14 @@ use std::fmt;
 #[derive(Debug)]
 pub enum FromStrError {
     InvalidInputLength(&'static str, usize, usize),
-    MalformedInput(&'static str)
+    MalformedInput(&'static str),
 }
 
 impl Error for FromStrError {
     fn description(&self) -> &str {
         match *self {
             FromStrError::InvalidInputLength(_, _, _) => "Str input was the wrong length",
-            FromStrError::MalformedInput(_) => "Str input was malformed"
+            FromStrError::MalformedInput(_) => "Str input was malformed",
         }
     }
 
@@ -25,8 +25,16 @@ impl Error for FromStrError {
 impl fmt::Display for FromStrError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            FromStrError::InvalidInputLength(field_name, expected, found) => write!(f, "\"{}\" field was wrong length: expected {} found {}", field_name, expected, found),
-            FromStrError::MalformedInput(field_name) => write!(f, "Input was malformed at \"{}\" field", field_name)
+            FromStrError::InvalidInputLength(field_name, expected, found) => {
+                write!(f,
+                       "\"{}\" field was wrong length: expected {} found {}",
+                       field_name,
+                       expected,
+                       found)
+            }
+            FromStrError::MalformedInput(field_name) => {
+                write!(f, "Input was malformed at \"{}\" field", field_name)
+            }
         }
     }
 }
@@ -35,7 +43,7 @@ impl fmt::Display for FromStrError {
 pub enum FromFenError {
     IncorrectNumberOfFields(usize),
     MalformedStringField(FromStrError),
-    IntFieldParseError(ParseIntError)
+    IntFieldParseError(ParseIntError),
 }
 
 impl From<ParseIntError> for FromFenError {
@@ -45,7 +53,7 @@ impl From<ParseIntError> for FromFenError {
 }
 
 impl From<FromStrError> for FromFenError {
-        fn from(err: FromStrError) -> FromFenError {
+    fn from(err: FromStrError) -> FromFenError {
         FromFenError::MalformedStringField(err)
     }
 }
@@ -55,7 +63,7 @@ impl Error for FromFenError {
         match *self {
             FromFenError::IncorrectNumberOfFields(_) => "fen str had an incorrect numer of fields",
             FromFenError::MalformedStringField(ref err) => err.description(),
-            FromFenError::IntFieldParseError(ref err) => err.description()
+            FromFenError::IntFieldParseError(ref err) => err.description(),
         }
     }
 
@@ -63,7 +71,7 @@ impl Error for FromFenError {
         match *self {
             FromFenError::IncorrectNumberOfFields(_) => None,
             FromFenError::MalformedStringField(ref err) => Some(err as &Error),
-            FromFenError::IntFieldParseError(ref err) => Some(err as &Error)
+            FromFenError::IntFieldParseError(ref err) => Some(err as &Error),
         }
     }
 }
@@ -71,9 +79,11 @@ impl Error for FromFenError {
 impl fmt::Display for FromFenError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            FromFenError::IncorrectNumberOfFields(num_fields) => write!(f, "Incorrect number of fields, found {}", num_fields),
+            FromFenError::IncorrectNumberOfFields(num_fields) => {
+                write!(f, "Incorrect number of fields, found {}", num_fields)
+            }
             FromFenError::MalformedStringField(ref err) => write!(f, "{}", err),
-            FromFenError::IntFieldParseError(ref err) => write!(f, "{}", err)
+            FromFenError::IntFieldParseError(ref err) => write!(f, "{}", err),
         }
     }
 }

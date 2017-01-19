@@ -1,14 +1,16 @@
-use square_position::{SquarePosition, Direction, NORTH, SOUTH, EAST, WEST, INTERMEDIATE, CARDINAL};
+use std::convert::From;
+
 use unicode_segmentation::UnicodeSegmentation;
-use std::convert::{TryFrom, From};
-use piece_board::{PieceBoard};
+
+use square_position::SquarePosition;
+use piece_board::PieceBoard;
 
 pub type BitBoard = u64;
 
 lazy_static! {
     pub static ref FILE_BOARDS: [BitBoard; 8] = {
         let mut file_boards = [0x101010101010101 as BitBoard; 8];
-    
+
         for index in 0..file_boards.len() {
             file_boards[index] = file_boards[index] << index;
         }
@@ -24,95 +26,27 @@ lazy_static! {
 
         rank_boards
     };
-    pub static ref KING_DIRECTIONS: [Direction; 8] = {
-        [
-            NORTH,
-            NORTH + EAST,
-            EAST,
-            SOUTH + EAST,
-            SOUTH,
-            SOUTH + WEST,
-            WEST,
-            NORTH + WEST
-        ]
-    };
-    pub static ref KNIGHT_DIRECTIONS: [Direction; 8] = {
-        [
-            NORTH + NORTH + EAST,
-            NORTH + EAST + EAST,
-            SOUTH + EAST + EAST,
-            SOUTH + SOUTH + EAST,
-            SOUTH + SOUTH + WEST,
-            SOUTH + WEST + WEST,
-            NORTH + WEST + WEST,
-            NORTH + NORTH + WEST
-        ]
-    };
-    pub static ref KNIGHT_ATTACK_BOARDS: [BitBoard; 64] = generate_attacks(&*KNIGHT_DIRECTIONS);
-    pub static ref KING_ATTACK_BOARDS: [BitBoard; 64] = generate_attacks(&*KING_DIRECTIONS);
-    pub static ref BISHOP_PRE_MASKS: [BitBoard; 64] = generate_mask(&INTERMEDIATE, false);
-    pub static ref BISHOP_POST_MASKS: [BitBoard; 64] = generate_mask(&INTERMEDIATE, true);
-    pub static ref ROOK_PRE_MASKS: [BitBoard; 64] = generate_mask(&CARDINAL, false);
-    pub static ref ROOK_POST_MASKS: [BitBoard; 64] = generate_mask(&CARDINAL, true);
 }
 
-fn generate_mask(directions: &[Direction], edges: bool) -> [BitBoard; 64] {
-    let mut masks = [0 as BitBoard; 64]; 
-    for square_index in 0..64 {
-        if let Ok(position) = TryFrom::try_from(square_index) {
-            for direction in directions {
-                let mut rook_position: SquarePosition = position;
-                while let Some(new_pos) = rook_position + *direction {
-                    rook_position = new_pos;
-
-                    masks[square_index as usize] |= 1 << rook_position.to_square_index();
-                }
-
-                if !edges {
-                    masks[square_index as usize] &= !(1 << rook_position.to_square_index());
-                }
-            }
-        }
-    }
-
-    masks
-}
-
-fn generate_attacks(directions: &[Direction]) -> [BitBoard; 64] {
-    let mut attacks = [0 as BitBoard; 64];
-
-    for square_index in 0..64 {
-        let position = SquarePosition::try_from(square_index);
-        if let Ok(pos) = position {
-            for direction in directions {
-                if let Some(new_pos) = pos + *direction {
-                    attacks[square_index as usize] |= 1 << new_pos.to_square_index();
-                }
-            }
-        }
-    }
-
-    attacks
-}
-
+#[cfg_attr(rustfmt, rustfmt_skip)]
 const INDEX_64: [usize; 64] = [
-    0, 47,  1, 56, 48, 27,  2, 60,
-   57, 49, 41, 37, 28, 16,  3, 61,
-   54, 58, 35, 52, 50, 42, 21, 44,
-   38, 32, 29, 23, 17, 11,  4, 62,
-   46, 55, 26, 59, 40, 36, 15, 53,
-   34, 51, 20, 43, 31, 22, 10, 45,
-   25, 39, 14, 33, 19, 30,  9, 24,
-   13, 18,  8, 12,  7,  6,  5, 63
+    00, 47, 01, 56, 48, 27, 02, 60,
+    57, 49, 41, 37, 28, 16, 03, 61,
+    54, 58, 35, 52, 50, 42, 21, 44,
+    38, 32, 29, 23, 17, 11, 04, 62,
+    46, 55, 26, 59, 40, 36, 15, 53,
+    34, 51, 20, 43, 31, 22, 10, 45,
+    25, 39, 14, 33, 19, 30, 09, 24,
+    13, 18, 08, 12, 07, 06, 05, 63
 ];
 
-const DEBRUIJIN_64: u64 =  0x03f79d71b4cb0a89;
+const DEBRUIJIN_64: u64 = 0x03f79d71b4cb0a89;
 
 pub fn bit_scan_forward(board: BitBoard) -> Option<usize> {
     if board == 0 {
         None
     } else {
-        Some(INDEX_64[((board ^ (board-1)).wrapping_mul(DEBRUIJIN_64) >> 58) as  usize])
+        Some(INDEX_64[((board ^ (board - 1)).wrapping_mul(DEBRUIJIN_64) >> 58) as usize])
     }
 }
 
@@ -120,7 +54,7 @@ pub fn bit_scan_reverse(mut board: BitBoard) -> Option<usize> {
     if board == 0 {
         None
     } else {
-        board |= board >> 1; 
+        board |= board >> 1;
         board |= board >> 2;
         board |= board >> 4;
         board |= board >> 8;
@@ -133,7 +67,7 @@ pub fn bit_scan_reverse(mut board: BitBoard) -> Option<usize> {
 
 pub struct BitBoardIter<'iter> {
     board: &'iter BitBoard,
-    mask: BitBoard
+    mask: BitBoard,
 }
 
 impl<'iter> Iterator for BitBoardIter<'iter> {
@@ -149,7 +83,7 @@ impl<'iter> Iterator for BitBoardIter<'iter> {
 pub fn bit_iterator<'a>(board: &'a BitBoard) -> BitBoardIter<'a> {
     BitBoardIter {
         board: board,
-        mask: 0
+        mask: 0,
     }
 }
 
@@ -162,13 +96,14 @@ pub fn bit_to_str(&board: &BitBoard) -> String {
         index += 9;
     }
 
-    output = output
-                .split_whitespace()
-                .map(|x| x.graphemes(true)
-                          .rev()
-                          .flat_map(|g| g.chars())
-                          .collect::<String>() + "\n")
-                .collect::<String>();
+    output = output.split_whitespace()
+        .map(|x| {
+            x.graphemes(true)
+                .rev()
+                .flat_map(|g| g.chars())
+                .collect::<String>() + "\n"
+        })
+        .collect::<String>();
 
     output = output.replace('0', ".");
     output = output.replace("", " ");
@@ -176,20 +111,25 @@ pub fn bit_to_str(&board: &BitBoard) -> String {
     output
 }
 
+#[derive(Debug)]
 pub struct BitSubsetIter<'a> {
     board: &'a BitBoard,
-    subset: BitBoard
+    subset: BitBoard,
+    count: usize,
 }
 
 impl<'a> Iterator for BitSubsetIter<'a> {
     type Item = BitBoard;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.subset == 0 {
+        if self.subset == 0 && self.count > 0 {
+            None
+        } else if *self.board == 0 {
             None
         } else {
             let result = self.subset;
             self.subset = (self.subset.wrapping_sub(*self.board)) & *self.board;
+            self.count += 1;
             Some(result)
         }
     }
@@ -198,7 +138,8 @@ impl<'a> Iterator for BitSubsetIter<'a> {
 pub fn subsets_iterator(set: &BitBoard) -> BitSubsetIter {
     BitSubsetIter {
         board: set,
-        subset: ((0 as BitBoard).wrapping_sub(*set)) & *set
+        subset: 0,
+        count: 0,
     }
 }
 
@@ -214,10 +155,32 @@ impl From<PieceBoard> for ([[BitBoard; 6]; 2], [BitBoard; 2]) {
         let mut bit_occupancy = [0 as BitBoard; 2];
 
         for (position, piece) in piece_board.into_iter() {
-            bit_board[piece.color() as usize][piece.piece_type() as usize] |= 1 << position.to_square_index();
+            bit_board[piece.color() as usize][piece.piece_type() as usize] |=
+                1 << position.to_square_index();
             bit_occupancy[piece.color() as usize] |= 1 << position.to_square_index();
         }
 
         (bit_board, bit_occupancy)
+    }
+}
+
+#[cfg(test)]
+mod test {
+
+    use bit_boards::{BitBoard, subsets_iterator};
+
+    #[test]
+    fn subset_iterator_contains_zero_test() {
+        let mask: BitBoard = 0x1010106e101000;
+
+        assert!(subsets_iterator(&mask).any(|x| x == 0));
+    }
+
+    #[test]
+    fn subset_iterator_correct_len_test() {
+        let mask: BitBoard = 0x1010106e101000;
+        let count_size: usize = subsets_iterator(&mask).count();
+        let expected_size: usize = 2u32.pow(mask.count_ones()) as usize;
+        assert_eq!(count_size, expected_size);
     }
 }

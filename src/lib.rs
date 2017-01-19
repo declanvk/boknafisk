@@ -1,4 +1,6 @@
 #![feature(try_from)]
+#![feature(box_syntax)]
+
 
 #[macro_use]
 extern crate bitflags;
@@ -16,3 +18,4 @@ pub mod piece;
 pub mod square_position;
 pub mod error_types;
 pub mod rkiss;
+pub mod move_gen;

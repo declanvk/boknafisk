@@ -1,4 +1,4 @@
-use piece::{PromotionType, Piece};
+use piece::{Piece, PromotionType};
 use square_position::SquarePosition;
 use castling::CastleType;
 
@@ -10,6 +10,7 @@ pub struct Move {
 }
 
 impl Move {
+    #[inline]
     pub fn new(start: SquarePosition,
                end: SquarePosition,
                active: Piece,
@@ -23,18 +24,22 @@ impl Move {
         }
     }
 
+    #[inline]
     pub fn start(&self) -> &SquarePosition {
         &self.start_position
     }
 
+    #[inline]
     pub fn end(&self) -> &SquarePosition {
         &self.end_position
     }
 
+    #[inline]
     pub fn active(&self) -> &Piece {
         &self.active_piece
     }
 
+    #[inline]
     pub fn move_type(&self) -> &MoveType {
         &self.move_type
     }

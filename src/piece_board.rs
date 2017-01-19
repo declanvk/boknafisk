@@ -1,4 +1,4 @@
-use piece::{Piece, PieceType, Color};
+use piece::{Color, Piece, PieceType};
 use square_position::SquarePosition;
 use std::ops::{Index, IndexMut};
 use std::convert::TryFrom;
@@ -12,6 +12,7 @@ pub struct PieceBoard {
 }
 
 impl PieceBoard {
+    #[inline]
     pub fn empty_board() -> PieceBoard {
         PieceBoard { board: [None; 64] }
     }
@@ -51,26 +52,34 @@ impl PieceBoard {
 
 impl FromStr for PieceBoard {
     type Err = FromStrError;
+
     fn from_str(piece_placement_string: &str) -> Result<PieceBoard, FromStrError> {
         let mut piece_board = PieceBoard::empty_board();
         let piece_placement_components = piece_placement_string.split("/").collect::<Vec<&str>>();
 
         if piece_placement_components.len() != 8 {
-            return Err(FromStrError::InvalidInputLength("piece board", 8, piece_placement_components.len()))
+            return Err(FromStrError::InvalidInputLength("piece board",
+                                                        8,
+                                                        piece_placement_components.len()));
         } else {
-            for (rank_index, rank_string) in (0..8).rev().zip(piece_placement_components.into_iter()) {
+            for (rank_index, rank_string) in (0..8)
+                .rev()
+                .zip(piece_placement_components.into_iter()) {
                 let mut file_index: usize = 0;
                 for rank_char in rank_string.chars() {
                     match rank_char {
                         x if x.is_digit(10) => {
                             file_index += x.to_digit(10).unwrap() as usize;
-                        },
+                        }
                         x => {
                             let piece_to_insert: Piece = (&x.to_string()).parse()?;
                             let board_index = file_index + rank_index * 8;
                             piece_board.board[board_index] = Some(piece_to_insert);
 
-                            println!("Inserted: {} at {} based on {}", piece_to_insert, board_index, x);
+                            println!("Inserted: {} at {} based on {}",
+                                     piece_to_insert,
+                                     board_index,
+                                     x);
 
                             file_index += 1;
                         }
@@ -102,7 +111,7 @@ impl fmt::Display for PieceBoard {
                         result += &piece.to_string();
 
                         empty_count = 0;
-                    },
+                    }
                     None => empty_count += 1,
                 }
             }
@@ -124,6 +133,7 @@ impl<'a> IntoIterator for &'a PieceBoard {
     type Item = (SquarePosition, Piece);
     type IntoIter = PieceBoardIterator<'a>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         PieceBoardIterator {
             board: self,
@@ -133,6 +143,7 @@ impl<'a> IntoIterator for &'a PieceBoard {
 }
 
 impl Clone for PieceBoard {
+    #[inline]
     fn clone(&self) -> PieceBoard {
         *self
     }
@@ -141,12 +152,14 @@ impl Clone for PieceBoard {
 impl Index<SquarePosition> for PieceBoard {
     type Output = Option<Piece>;
 
+    #[inline]
     fn index<'a>(&'a self, position: SquarePosition) -> &'a Option<Piece> {
         &self.board[8 * position.rank + position.file]
     }
 }
 
 impl IndexMut<SquarePosition> for PieceBoard {
+    #[inline]
     fn index_mut(&mut self, position: SquarePosition) -> &mut Option<Piece> {
         &mut self.board[8 * position.rank + position.file]
     }
@@ -186,7 +199,8 @@ mod test {
     fn starting_board_to_str_test() {
         let starting_board = PieceBoard::starting_board();
 
-        assert_eq!(starting_board.to_string(), "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
+        assert_eq!(starting_board.to_string(),
+                   "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
     }
 
     #[test]
@@ -194,6 +208,7 @@ mod test {
         let starting_board_str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
         let starting_board_from_str: PieceBoard = starting_board_str.parse().unwrap();
 
-        assert_eq!(starting_board_from_str.to_string(), PieceBoard::starting_board().to_string());
+        assert_eq!(starting_board_from_str.to_string(),
+                   PieceBoard::starting_board().to_string());
     }
 }

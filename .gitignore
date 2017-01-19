@@ -2,3 +2,6 @@ target
 *.swp
 main
 .DS_Store
+*.bk
+.gdb_history
+*.profile

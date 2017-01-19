@@ -12,19 +12,21 @@ pub enum Color {
 impl Not for Color {
     type Output = Color;
 
+    #[inline]
     fn not(self) -> Color {
         match self {
             Color::White => Color::Black,
-            Color::Black => Color::White
+            Color::Black => Color::White,
         }
     }
 }
 
 impl fmt::Display for Color {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let str_repr = match *self {
             Color::White => "w",
-            Color::Black => "b"
+            Color::Black => "b",
         };
 
         write!(f, "{}", str_repr)
@@ -41,7 +43,7 @@ impl FromStr for Color {
             match color_str {
                 "w" => Ok(Color::White),
                 "b" => Ok(Color::Black),
-                _ => Err(FromStrError::MalformedInput("color"))
+                _ => Err(FromStrError::MalformedInput("color")),
             }
         }
     }
@@ -66,7 +68,7 @@ impl fmt::Display for PieceType {
             &PieceType::Bishop => "B",
             &PieceType::Knight => "N",
             &PieceType::Rook => "R",
-            &PieceType::Pawn => "P",             
+            &PieceType::Pawn => "P",
         };
 
         write!(f, "{}", string_repr)
@@ -82,6 +84,7 @@ pub enum PromotionType {
 }
 
 impl PieceType {
+    #[inline]
     pub fn value(&self) -> u32 {
         match *self {
             PieceType::King => 40000,
@@ -101,6 +104,7 @@ pub struct Piece {
 }
 
 impl Piece {
+    #[inline]
     pub fn new(piece_type: PieceType, color: Color) -> Piece {
         Piece {
             piece_type: piece_type,
@@ -108,14 +112,17 @@ impl Piece {
         }
     }
 
+    #[inline]
     pub fn value(&self) -> u32 {
         self.piece_type.value()
     }
 
+    #[inline]
     pub fn piece_type(&self) -> PieceType {
         self.piece_type
     }
 
+    #[inline]
     pub fn color(&self) -> Color {
         self.color
     }
@@ -125,9 +132,9 @@ impl fmt::Display for Piece {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.color {
             Color::White => write!(f, "{}", self.piece_type.to_string().as_str().to_uppercase()),
-            Color::Black => write!(f, "{}", self.piece_type.to_string().as_str().to_lowercase())
+            Color::Black => write!(f, "{}", self.piece_type.to_string().as_str().to_lowercase()),
         }
-        
+
     }
 }
 
@@ -148,7 +155,7 @@ impl FromStr for Piece {
             "n" => Ok(Piece::new(PieceType::Knight, Color::Black)),
             "r" => Ok(Piece::new(PieceType::Rook, Color::Black)),
             "p" => Ok(Piece::new(PieceType::Pawn, Color::Black)),
-            _ => Err(FromStrError::MalformedInput("piece"))
+            _ => Err(FromStrError::MalformedInput("piece")),
         }
     }
 }
