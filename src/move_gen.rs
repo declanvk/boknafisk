@@ -326,9 +326,9 @@ mod test {
 
     use bit_boards::BitBoard;
     use square_position::{CARDINAL, Direction, SquarePosition};
-    use move_gen::{AttackBoardCollection, BISHOP_ATTACKS_SIZE, KING_ATTACKS_SIZE,
-                   KNIGHT_ATTACKS_SIZE, MagicAttackBoard, ROOK_ATTACKS_SIZE,
-                   generate_sliding_attack_bitboard, generate_sliding_attack_bitboards};
+    use move_gen::{BISHOP_ATTACKS_SIZE, BitboardGenerator, KING_ATTACKS_SIZE, KNIGHT_ATTACKS_SIZE,
+                   MagicAttackBoard, ROOK_ATTACKS_SIZE, generate_sliding_attack_bitboard,
+                   generate_sliding_attack_bitboards};
     use piece::PieceType;
 
     #[test]
